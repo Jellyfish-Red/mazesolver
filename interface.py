@@ -12,6 +12,9 @@ class Window:
 
     def draw_line(self, line, color):
         line.draw(self.__canvas, color)
+    
+    def draw_cell(self, cell):
+        cell.draw()
 
     def redraw(self):
         self.__root.update_idletasks()
