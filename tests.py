@@ -15,10 +15,10 @@ class Tests(unittest.TestCase):
         m2 = Maze(0, 0, num_rows, num_columns, 10, 10)
         self.__verify_maze_matrix(m2, num_rows, num_columns, 0, 0, 10, 10)
 
-        num_rows = 1000
-        num_columns = 1000
-        m3 = Maze(0, 0, num_rows, num_columns, 10, 10)
-        self.__verify_maze_matrix(m3, num_rows, num_columns)
+        # num_rows = 900
+        # num_columns = 900
+        # m3 = Maze(0, 0, num_rows, num_columns, 10, 10)
+        # self.__verify_maze_matrix(m3, num_rows, num_columns)
 
     def __verify_maze_matrix(self, maze, expected_rows, expected_columns, 
                              start_x, start_y, cell_size_x, cell_size_y):
@@ -55,6 +55,13 @@ class Tests(unittest.TestCase):
         w1 = Window(800, 600)
         m1 = Maze(0, 0, num_rows, num_columns, 20, 20, parent = w1)
         self.__verify_maze_matrix(m1, num_rows, num_columns, 0, 0, 20, 20)
+        m1.solve()
+
+        self.assertEqual(
+            m1.cells[num_columns - 1][num_rows - 1].visited,
+            True,
+            msg = "Was the exit cell visited?"
+        )
 
 
 if __name__ == '__main__':

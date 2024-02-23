@@ -68,5 +68,6 @@ def test_cells(window):
 
 def test_maze(window):
     m1 = Maze(10, 10, 10, 10, 10, 10, parent = window)
+    m1.solve()
 
 main()

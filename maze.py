@@ -22,6 +22,7 @@ class Maze:
         self.__create_cells()
         self.__break_entrance_and_exit()
         self.__break_walls_r(0, 0)
+        self.__reset_visited_cells()
 
     def __create_cells(self):
         for i in range(self.__columns):
@@ -54,18 +55,140 @@ class Maze:
         self.__parent.redraw()
         sleep(0.01)
 
+    def solve(self):
+        return self.__solve_r(0, 0)
+    
+    def __solve_r(self, i = 0, j = 0):
+        self.__animate()
+        self.cells[i][j].visited = True
+        maze_solved = i == self.__columns - 1 and j == self.__rows - 1
+
+        if not maze_solved:
+
+            for direction in range(4):
+                # Is direction valid?
+                # Is direction not already visited?
+                # Is direction passable?
+                # If all of those are valid, consider it our target
+                a, b = 0, 0
+                match direction:
+                    case 0: # North
+                        if j <= 0:
+                            continue
+                        if self.cells[i][j - 1].visited:
+                            continue
+                        if self.cells[i][j].has_top and self.cells[i][j - 1].has_bottom:
+                            continue
+
+                        a = i
+                        b = j - 1
+
+                    case 1: # South
+                        if j >= self.__rows - 1:
+                            continue
+                        if self.cells[i][j + 1].visited:
+                            continue
+                        if self.cells[i][j].has_bottom and self.cells[i][j + 1].has_top:
+                            continue
+
+                        a = i
+                        b = j + 1
+
+                    case 2: # West
+                        if i <= 0:
+                            continue
+                        if self.cells[i - 1][j].visited:
+                            continue
+                        if self.cells[i][j].has_left and self.cells[i - 1][j].has_right:
+                            continue
+
+                        a = i - 1
+                        b = j 
+                        
+                    case 3: # East
+                        if i >= self.__columns - 1:
+                            continue
+                        if self.cells[i + 1][j].visited:
+                            continue
+                        if self.cells[i][j].has_right and self.cells[i + 1][j].has_left:
+                            continue
+
+                        a = i + 1
+                        b = j
+
+                # We've reached a valid direction.
+                # Draw a move to that location, and Attempt to keep solving at that location.
+                # If that direction fails, draw an Undo Move for this part of the line.
+                # Regardless, pass the result upwards
+                self.cells[i][j].draw_move(self.cells[a][b])
+                maze_solved = self.__solve_r(a, b)
+                if not maze_solved:
+                    self.cells[i][j].draw_move(self.cells[a][b], undo = True)
+        return maze_solved
+
     def __break_entrance_and_exit(self):
         entrance_cell = self.cells[0][0]
         entrance_cell.has_top = False
-        if self.__parent is not None:
-            entrance_cell.draw()
-
         exit_cell = self.cells[self.__columns - 1][self.__rows - 1]
         exit_cell.has_bottom = False
+
         if self.__parent is not None:
+            entrance_cell.draw()
             exit_cell.draw()
     
     def __break_walls_r(self, i, j):
+        self.cells[i][j].visited = True
+
+        while True:
+            visitable = []
+
+            # North
+            if j > 0 and not self.cells[i][j - 1].visited:
+                visitable.append((i, j - 1))
+
+            # South
+            if j < self.__rows - 1 and not self.cells[i][j + 1].visited:
+                visitable.append((i, j + 1))
+            
+            # West
+            if i > 0 and not self.cells[i - 1][j].visited:
+                visitable.append((i - 1, j))
+
+            # East
+            if i < self.__columns - 1 and not self.cells[i + 1][j].visited:
+                visitable.append((i + 1, j))
+        
+            if len(visitable) == 0:
+                self.cells[i][j].draw()
+                return
+            
+            # Figure out what random direction to take:
+            direction = random.randrange(len(visitable))
+            next_direction = visitable[direction]
+
+            # North
+            if next_direction[1] == j - 1:
+                self.cells[i][j].has_top = False
+                self.cells[i][j - 1].has_bottom = False
+                
+            # South
+            if next_direction[1] == j + 1:
+                self.cells[i][j].has_bottom = False
+                self.cells[i][j + 1].has_top = False
+                
+            # West
+            if next_direction[0] == i - 1:
+                self.cells[i][j].has_left = False
+                self.cells[i - 1][j].has_right = False
+
+            # East
+            if next_direction[0] == i + 1:
+                self.cells[i][j].has_right = False
+                self.cells[i + 1][j].has_left = False
+                
+            self.__break_walls_r(next_direction[0], next_direction[1])
+
+    def __break_walls_with_loops_r(self, i, j):
         self.cells[i][j].visited = True
 
         visitable = []
@@ -115,25 +238,30 @@ class Maze:
                     self.cells[i][j - 1].has_bottom = False
                     self.cells[i][j].draw()
                     self.cells[i][j - 1].draw()
-                    self.__break_walls_r(i, j - 1)
+                    self.__break_walls_with_loops_r(i, j - 1)
 
                 case 1: # South
                     self.cells[i][j].has_bottom = False
                     self.cells[i][j + 1].has_top = False
                     self.cells[i][j].draw()
                     self.cells[i][j + 1].draw()
-                    self.__break_walls_r(i, j + 1)
+                    self.__break_walls_with_loops_r(i, j + 1)
                     
                 case 2: # West
                     self.cells[i][j].has_left = False
                     self.cells[i - 1][j].has_right = False
                     self.cells[i][j].draw()
                     self.cells[i - 1][j].draw()
-                    self.__break_walls_r(i - 1, j)
+                    self.__break_walls_with_loops_r(i - 1, j)
                     
                 case 3: # East
                     self.cells[i][j].has_right = False
                     self.cells[i + 1][j].has_left = False
                     self.cells[i][j].draw()
                     self.cells[i + 1][j].draw()
-                    self.__break_walls_r(i + 1, j)
+                    self.__break_walls_with_loops_r(i + 1, j)
+
+    def __reset_visited_cells(self):
+        for column in self.cells:
+            for cell in column:
+                cell.visited = False

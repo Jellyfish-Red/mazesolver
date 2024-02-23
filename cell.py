@@ -18,6 +18,9 @@ class Cell:
         self.__color = color
 
     def draw(self):
+        if self.__parent is None:
+            return
+        
         l1_2 = Line(self.p1, self.__p2)
         l1_3 = Line(self.p1, self.__p3)
         l2_4 = Line(self.__p2, self.__p4)
